@@ -110,6 +110,7 @@ class MainFragment : Fragment() {
                     binding.authButton.text = getString(R.string.logout_button_text)
                     binding.authButton.setOnClickListener {
                         // TODO implement logging out user in next step
+                        AuthUI.getInstance().signOut(requireContext())
                     }
 
                     // TODO 2. If the user is logged in,
