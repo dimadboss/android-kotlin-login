@@ -75,7 +75,10 @@ class MainFragment : Fragment() {
             val response = IdpResponse.fromResultIntent(data)
             if (resultCode == Activity.RESULT_OK) {
                 // User successfully signed in.
-                Log.i(TAG, "Successfully signed in user ${FirebaseAuth.getInstance().currentUser?.displayName}!")
+                Log.i(
+                    TAG,
+                    "Successfully signed in user ${FirebaseAuth.getInstance().currentUser?.displayName}!"
+                )
             } else {
                 // Sign in failed. If response is null, the user canceled the
                 // sign-in flow using the back button. Otherwise, check
@@ -132,11 +135,12 @@ class MainFragment : Fragment() {
 
 
     private fun getFactWithPersonalization(fact: String): String {
+        val provider = FirebaseAuth.getInstance().getAccessToken(false).result?.signInProvider
         return String.format(
             resources.getString(
                 R.string.welcome_message_authed,
                 FirebaseAuth.getInstance().currentUser?.displayName,
-                Character.toLowerCase(fact[0]) + fact.substring(1)
+                provider
             )
         )
     }
