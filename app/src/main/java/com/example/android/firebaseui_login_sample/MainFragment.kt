@@ -24,6 +24,7 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
@@ -67,6 +68,10 @@ class MainFragment : Fragment() {
 
         binding.deleteButton.setOnClickListener {
             deleteAccountFlow()
+        }
+
+        binding.changeEmailButton.setOnClickListener {
+            changeEmailFlow()
         }
     }
 
@@ -132,7 +137,7 @@ class MainFragment : Fragment() {
                     binding.imageView.visibility = View.VISIBLE
                     binding.deleteButton.visibility = View.VISIBLE
 
-                   // FirebaseAuth.getInstance().currentUser?.updateEmail("ds-drozdov@yandex.ru")
+                    // FirebaseAuth.getInstance().currentUser?.updateEmail("ds-drozdov@yandex.ru")
 
 //                    val updates =
 //                        UserProfileChangeRequest.Builder().setDisplayName("Oaoaoaa").build()
@@ -151,8 +156,9 @@ class MainFragment : Fragment() {
 
     private fun getContentForAuth(): String {
         val provider = FirebaseAuth.getInstance().getAccessToken(false).result?.signInProvider
-        var name = FirebaseAuth.getInstance().currentUser?.displayName ?: "-"
-        if (name == "") {
+        val user = FirebaseAuth.getInstance().currentUser
+        var name = user?.displayName
+        if (name.isNullOrEmpty()) {
             name = "-"
         }
         return String.format(
@@ -197,6 +203,24 @@ class MainFragment : Fragment() {
         }
         user.delete()
         onLogout()
+    }
+
+    private fun changeEmailFlow() {
+        val user = FirebaseAuth.getInstance().currentUser
+        if (user == null) {
+            Log.e("changeEmailFlow", "user was null")
+            return
+        }
+        val oldEmail = user.email
+        val newEmail = binding.emailInput.text.toString()
+        if (newEmail.isEmpty()) {
+            return
+        }
+        binding.emailInput.text.clear()
+        binding.emailInput.clearFocus()
+        user.updateEmail(newEmail)
+
+        Toast.makeText(requireContext(), "Email updated $oldEmail → $newEmail", Toast.LENGTH_SHORT).show()
     }
 
     private fun onLogout() {

@@ -39,4 +39,6 @@ class LoginViewModel : ViewModel() {
             AuthenticationState.UNAUTHENTICATED
         }
     }
+
+    val user = FirebaseUserLiveData()
 }
