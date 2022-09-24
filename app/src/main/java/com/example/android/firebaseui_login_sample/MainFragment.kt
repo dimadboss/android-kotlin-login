@@ -31,6 +31,7 @@ import com.example.android.firebaseui_login_sample.databinding.FragmentMainBindi
 import com.firebase.ui.auth.AuthUI
 import com.firebase.ui.auth.IdpResponse
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.UserProfileChangeRequest
 import com.squareup.picasso.Picasso
 
 class MainFragment : Fragment() {
@@ -62,6 +63,10 @@ class MainFragment : Fragment() {
         binding.authButton.setOnClickListener {
             // TODO call launchSignInFlow when authButton is clicked
             launchSignInFlow()
+        }
+
+        binding.deleteButton.setOnClickListener {
+            deleteAccountFlow()
         }
     }
 
@@ -125,15 +130,19 @@ class MainFragment : Fragment() {
                     }
                     Picasso.with(this.requireContext()).load(url).into(binding.imageView)
                     binding.imageView.visibility = View.VISIBLE
+                    binding.deleteButton.visibility = View.VISIBLE
+
+                   // FirebaseAuth.getInstance().currentUser?.updateEmail("ds-drozdov@yandex.ru")
+
+//                    val updates =
+//                        UserProfileChangeRequest.Builder().setDisplayName("Oaoaoaa").build()
+//                    FirebaseAuth.getInstance().currentUser?.updateProfile(updates)
                 }
                 else -> {
                     // TODO 3. Lastly, if there is no logged-in user,
                     // auth_button should display Login and
                     //  launch the sign in screen when clicked.
-                    binding.authButton.text = getString(R.string.login_button_text)
-                    binding.authButton.setOnClickListener { launchSignInFlow() }
-                    binding.welcomeText.text = PLEASE_LOGIN_TEXT
-                    binding.imageView.visibility = View.INVISIBLE
+                    onLogout()
                 }
             }
         })
@@ -142,10 +151,14 @@ class MainFragment : Fragment() {
 
     private fun getContentForAuth(): String {
         val provider = FirebaseAuth.getInstance().getAccessToken(false).result?.signInProvider
+        var name = FirebaseAuth.getInstance().currentUser?.displayName ?: "-"
+        if (name == "") {
+            name = "-"
+        }
         return String.format(
             resources.getString(
                 R.string.welcome_message_authed,
-                FirebaseAuth.getInstance().currentUser?.displayName,
+                name,
                 provider
             )
         )
@@ -174,5 +187,23 @@ class MainFragment : Fragment() {
                 .build(),
             SIGN_IN_RESULT_CODE
         )
+    }
+
+    private fun deleteAccountFlow() {
+        val user = FirebaseAuth.getInstance().currentUser
+        if (user == null) {
+            Log.e("deleteAccountFlow", "user was null")
+            return
+        }
+        user.delete()
+        onLogout()
+    }
+
+    private fun onLogout() {
+        binding.authButton.text = getString(R.string.login_button_text)
+        binding.authButton.setOnClickListener { launchSignInFlow() }
+        binding.welcomeText.text = PLEASE_LOGIN_TEXT
+        binding.imageView.visibility = View.INVISIBLE
+        binding.deleteButton.visibility = View.INVISIBLE
     }
 }
