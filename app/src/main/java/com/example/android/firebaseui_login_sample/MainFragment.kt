@@ -134,8 +134,7 @@ class MainFragment : Fragment() {
                         url = DEFAULT_AVATAR_LINK
                     }
                     Picasso.with(this.requireContext()).load(url).into(binding.imageView)
-                    binding.imageView.visibility = View.VISIBLE
-                    binding.deleteButton.visibility = View.VISIBLE
+                    changeVisibility(true)
 
                     // FirebaseAuth.getInstance().currentUser?.updateEmail("ds-drozdov@yandex.ru")
 
@@ -202,6 +201,7 @@ class MainFragment : Fragment() {
             return
         }
         user.delete()
+        Log.i("deleteAccountFlow", "user $user deleted")
         onLogout()
     }
 
@@ -220,14 +220,23 @@ class MainFragment : Fragment() {
         binding.emailInput.clearFocus()
         user.updateEmail(newEmail)
 
-        Toast.makeText(requireContext(), "Email updated $oldEmail → $newEmail", Toast.LENGTH_SHORT).show()
+        Toast.makeText(requireContext(), "Email updated $oldEmail → $newEmail", Toast.LENGTH_SHORT)
+            .show()
     }
 
     private fun onLogout() {
         binding.authButton.text = getString(R.string.login_button_text)
         binding.authButton.setOnClickListener { launchSignInFlow() }
         binding.welcomeText.text = PLEASE_LOGIN_TEXT
-        binding.imageView.visibility = View.INVISIBLE
-        binding.deleteButton.visibility = View.INVISIBLE
+        changeVisibility(false)
+    }
+
+    private fun changeVisibility(visible: Boolean) {
+        val visibility = if (visible) View.VISIBLE else View.INVISIBLE
+
+        binding.imageView.visibility = visibility
+        binding.deleteButton.visibility = visibility
+        binding.emailInput.visibility = visibility
+        binding.changeEmailButton.visibility = visibility
     }
 }
