@@ -27,17 +27,21 @@ import android.view.ViewGroup
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
-import androidx.navigation.fragment.findNavController
 import com.example.android.firebaseui_login_sample.databinding.FragmentMainBinding
 import com.firebase.ui.auth.AuthUI
 import com.firebase.ui.auth.IdpResponse
 import com.google.firebase.auth.FirebaseAuth
+import com.squareup.picasso.Picasso
 
 class MainFragment : Fragment() {
 
     companion object {
         const val TAG = "MainFragment"
         const val SIGN_IN_RESULT_CODE = 1001
+        const val PLEASE_LOGIN_TEXT = "We don't know you. Please login"
+        const val DEFAULT_AVATAR_LINK =
+            "https://4xucy2kyby51ggkud2tadg3d-wpengine.netdna-ssl.com/wp-content/uploads/sites/37/2017/02/IAFOR-Blank-Avatar-Image.jpg"
+
     }
 
     // Get a reference to the ViewModel scoped to this Fragment
@@ -48,11 +52,6 @@ class MainFragment : Fragment() {
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View? {
         binding = DataBindingUtil.inflate(inflater, R.layout.fragment_main, container, false)
-
-        // TODO Remove the two lines below once observeAuthenticationState is implemented.
-        binding.welcomeText.text = viewModel.getFactToDisplay(requireContext())
-        binding.authButton.text = getString(R.string.login_btn)
-
         return binding.root
     }
 
@@ -94,7 +93,6 @@ class MainFragment : Fragment() {
      * If there is no logged in user: show a login button
      */
     private fun observeAuthenticationState() {
-        val factToDisplay = viewModel.getFactToDisplay(requireContext())
 
         // TODO Use the authenticationState variable from LoginViewModel to update the UI
         //  accordingly.
@@ -119,7 +117,14 @@ class MainFragment : Fragment() {
                     // TODO 2. If the user is logged in,
                     // you can customize the welcome message they see by
                     // utilizing the getFactWithPersonalization() function provided
-                    binding.welcomeText.text = getFactWithPersonalization(factToDisplay)
+                    binding.welcomeText.text = getContentForAuth()
+                    var url = FirebaseAuth.getInstance().currentUser?.photoUrl?.toString()
+                        ?.replace("s96-c", "s400-c")
+                    if (url == null) {
+                        url = DEFAULT_AVATAR_LINK
+                    }
+                    Picasso.with(this.requireContext()).load(url).into(binding.imageView)
+                    binding.imageView.visibility = View.VISIBLE
                 }
                 else -> {
                     // TODO 3. Lastly, if there is no logged-in user,
@@ -127,14 +132,15 @@ class MainFragment : Fragment() {
                     //  launch the sign in screen when clicked.
                     binding.authButton.text = getString(R.string.login_button_text)
                     binding.authButton.setOnClickListener { launchSignInFlow() }
-                    binding.welcomeText.text = factToDisplay
+                    binding.welcomeText.text = PLEASE_LOGIN_TEXT
+                    binding.imageView.visibility = View.INVISIBLE
                 }
             }
         })
     }
 
 
-    private fun getFactWithPersonalization(fact: String): String {
+    private fun getContentForAuth(): String {
         val provider = FirebaseAuth.getInstance().getAccessToken(false).result?.signInProvider
         return String.format(
             resources.getString(
