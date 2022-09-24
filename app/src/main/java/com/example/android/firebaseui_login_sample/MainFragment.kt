@@ -31,9 +31,12 @@ import androidx.lifecycle.Observer
 import com.example.android.firebaseui_login_sample.databinding.FragmentMainBinding
 import com.firebase.ui.auth.AuthUI
 import com.firebase.ui.auth.IdpResponse
+import com.google.firebase.FirebaseException
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException
 import com.google.firebase.auth.UserProfileChangeRequest
 import com.squareup.picasso.Picasso
+import java.lang.Exception
 
 class MainFragment : Fragment() {
 
@@ -128,13 +131,17 @@ class MainFragment : Fragment() {
                     // you can customize the welcome message they see by
                     // utilizing the getFactWithPersonalization() function provided
                     binding.welcomeText.text = getContentForAuth()
-                    var url = FirebaseAuth.getInstance().currentUser?.photoUrl?.toString()
+                    val user = FirebaseAuth.getInstance().currentUser
+                    var url = user?.photoUrl?.toString()
                         ?.replace("s96-c", "s400-c")
                     if (url == null) {
                         url = DEFAULT_AVATAR_LINK
                     }
                     Picasso.with(this.requireContext()).load(url).into(binding.imageView)
                     changeVisibility(true)
+                    if (user?.email != null) {
+                        binding.emailInput.setText(user.email)
+                    }
 
                     // FirebaseAuth.getInstance().currentUser?.updateEmail("ds-drozdov@yandex.ru")
 
@@ -216,9 +223,18 @@ class MainFragment : Fragment() {
         if (newEmail.isEmpty()) {
             return
         }
-        binding.emailInput.text.clear()
-        binding.emailInput.clearFocus()
-        user.updateEmail(newEmail)
+
+        try {
+            user.updateEmail(newEmail)
+        } catch (e: FirebaseException) {
+            Toast.makeText(requireContext(), "Firebase exception ${e.message}", Toast.LENGTH_SHORT)
+                .show()
+            return
+        } catch (e: Exception) {
+            Toast.makeText(requireContext(), "Unknown exception ${e.message}", Toast.LENGTH_SHORT)
+                .show()
+            return
+        }
 
         Toast.makeText(requireContext(), "Email updated $oldEmail → $newEmail", Toast.LENGTH_SHORT)
             .show()
