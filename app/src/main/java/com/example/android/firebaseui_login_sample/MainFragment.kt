@@ -16,6 +16,7 @@
 
 package com.example.android.firebaseui_login_sample
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Intent
 import android.net.Uri
@@ -29,6 +30,8 @@ import android.widget.Toast
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
+import androidx.navigation.NavController
+import androidx.navigation.fragment.findNavController
 import com.example.android.firebaseui_login_sample.databinding.FragmentMainBinding
 import com.firebase.ui.auth.AuthUI
 import com.firebase.ui.auth.IdpResponse
@@ -54,9 +57,12 @@ class MainFragment : Fragment() {
     private val viewModel by viewModels<LoginViewModel>()
     private lateinit var binding: FragmentMainBinding
 
+    private lateinit var navController: NavController
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View {
+        navController = findNavController()
         binding = DataBindingUtil.inflate(inflater, R.layout.fragment_main, container, false)
         return binding.root
     }
@@ -83,6 +89,10 @@ class MainFragment : Fragment() {
 
         binding.changePhoto.setOnClickListener {
             changePhotoFlow()
+        }
+
+        binding.securityButton.setOnClickListener {
+            navigateToSecurity()
         }
     }
 
@@ -285,6 +295,16 @@ class MainFragment : Fragment() {
             .show()
     }
 
+    private fun navigateToSecurity() {
+        val user = FirebaseAuth.getInstance().currentUser
+        if (user == null) {
+            Log.e("navigateToSecurity", "user was null. forbidden")
+            return
+        }
+
+        findNavController().navigate(R.id.action_mainFragment_to_loginFragment)
+    }
+
     private fun onLogout() {
         binding.authButton.text = getString(R.string.login_button_text)
         binding.authButton.setOnClickListener { launchSignInFlow() }
@@ -340,5 +360,6 @@ class MainFragment : Fragment() {
         binding.changeNameButton.visibility = visibility
         binding.photoInput.visibility = visibility
         binding.changePhoto.visibility = visibility
+        binding.securityButton.visibility = visibility
     }
 }

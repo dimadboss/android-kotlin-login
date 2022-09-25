@@ -57,7 +57,14 @@ class LoginFragment : Fragment() {
             inflater, R.layout.fragment_login, container, false
         )
 
-        binding.authButton.setOnClickListener { launchSignInFlow() }
+        val user = FirebaseAuth.getInstance().currentUser
+        if (user == null) {
+            Log.e("onCreateView", "user was null. Forbidden!")
+            return null
+        }
+
+        binding.textView.text = "Welcome to security zone, ${user.displayName ?: "user"}"
+
 
         return binding.root
     }

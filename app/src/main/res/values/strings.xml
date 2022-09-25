@@ -21,7 +21,7 @@
     <string name="login_unsuccessful_msg">Login unsuccessful</string>
     <string name="welcome_message">It\'s currently %1$s.</string>
     <string name="welcome_message_authed">Name: %1$s \n Auth: %2$s</string>
-    <string name="login_prompt">Login to set customizations!</string>
+    <string name="login_prompt">Security page</string>
     <string name="login_btn">Login</string>
     <string name="settings_btn">Settings</string>
     <string name="settings_fact_type_title">Fun Fact Type</string>
