@@ -41,4 +41,5 @@ class LoginViewModel : ViewModel() {
     }
 
     var userName = ""
+    var userPhoto = ""
 }

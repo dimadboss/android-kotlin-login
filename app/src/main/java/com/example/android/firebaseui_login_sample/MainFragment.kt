@@ -18,6 +18,7 @@ package com.example.android.firebaseui_login_sample
 
 import android.app.Activity
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import androidx.fragment.app.Fragment
@@ -33,6 +34,7 @@ import com.firebase.ui.auth.AuthUI
 import com.firebase.ui.auth.IdpResponse
 import com.google.firebase.FirebaseException
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.UserProfileChangeRequest
 import com.squareup.picasso.Picasso
 import java.lang.Exception
@@ -64,7 +66,6 @@ class MainFragment : Fragment() {
         observeAuthenticationState()
 
         binding.authButton.setOnClickListener {
-            // TODO call launchSignInFlow when authButton is clicked
             launchSignInFlow()
         }
 
@@ -78,6 +79,10 @@ class MainFragment : Fragment() {
 
         binding.changeNameButton.setOnClickListener {
             changeNameFlow()
+        }
+
+        binding.changePhoto.setOnClickListener {
+            changePhotoFlow()
         }
     }
 
@@ -248,34 +253,80 @@ class MainFragment : Fragment() {
             .show()
     }
 
+    private fun changePhotoFlow() {
+        val user = FirebaseAuth.getInstance().currentUser
+        if (user == null) {
+            Log.e("changePhotoFlow", "user was null")
+            return
+        }
+
+        val newPhoto = binding.photoInput.text.toString()
+        if (newPhoto.isEmpty()) {
+            return
+        }
+
+        try {
+            val updates =
+                UserProfileChangeRequest.Builder().setPhotoUri(Uri.parse(newPhoto)).build()
+            user.updateProfile(updates)
+            viewModel.userPhoto = newPhoto
+            initPhoto()
+        } catch (e: FirebaseException) {
+            Toast.makeText(requireContext(), "Firebase exception ${e.message}", Toast.LENGTH_LONG)
+                .show()
+            return
+        } catch (e: Exception) {
+            Toast.makeText(requireContext(), "Unknown exception ${e.message}", Toast.LENGTH_LONG)
+                .show()
+            return
+        }
+
+        Toast.makeText(requireContext(), "Photo updated", Toast.LENGTH_LONG)
+            .show()
+    }
+
     private fun onLogout() {
         binding.authButton.text = getString(R.string.login_button_text)
         binding.authButton.setOnClickListener { launchSignInFlow() }
         binding.welcomeText.text = PLEASE_LOGIN_TEXT
         changeVisibility(false)
         viewModel.userName = ""
+        viewModel.userPhoto = ""
     }
 
-    private fun onLogin() {
-        binding.authButton.text = getString(R.string.logout_button_text)
-        binding.authButton.setOnClickListener {
-            AuthUI.getInstance().signOut(requireContext())
-        }
+    private fun initPhoto() {
+        Picasso.with(requireContext()).load(viewModel.userPhoto).into(binding.imageView)
+    }
 
+    private fun initUserData() {
         val user = FirebaseAuth.getInstance().currentUser
+
         viewModel.userName = user?.displayName ?: ""
-        binding.welcomeText.text = getContentForAuth()
 
         var url = user?.photoUrl?.toString()?.replace("s96-c", "s400-c")
         if (url.isNullOrEmpty()) {
             url = DEFAULT_AVATAR_LINK
         }
-        Picasso.with(requireContext()).load(url).into(binding.imageView)
 
-        changeVisibility(true)
+        viewModel.userPhoto = url
+
+        initPhoto()
 
         binding.emailInput.setText(user?.email ?: "")
         binding.nameInput.setText(user?.displayName ?: "")
+    }
+
+    private fun onLogin() {
+        initUserData()
+
+        binding.authButton.text = getString(R.string.logout_button_text)
+        binding.authButton.setOnClickListener {
+            AuthUI.getInstance().signOut(requireContext())
+        }
+
+        binding.welcomeText.text = getContentForAuth()
+
+        changeVisibility(true)
     }
 
     private fun changeVisibility(visible: Boolean) {
@@ -287,5 +338,7 @@ class MainFragment : Fragment() {
         binding.changeEmailButton.visibility = visibility
         binding.nameInput.visibility = visibility
         binding.changeNameButton.visibility = visibility
+        binding.photoInput.visibility = visibility
+        binding.changePhoto.visibility = visibility
     }
 }
