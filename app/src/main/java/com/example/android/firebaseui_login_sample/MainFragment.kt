@@ -33,7 +33,6 @@ import com.firebase.ui.auth.AuthUI
 import com.firebase.ui.auth.IdpResponse
 import com.google.firebase.FirebaseException
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException
 import com.google.firebase.auth.UserProfileChangeRequest
 import com.squareup.picasso.Picasso
 import java.lang.Exception
@@ -55,7 +54,7 @@ class MainFragment : Fragment() {
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         binding = DataBindingUtil.inflate(inflater, R.layout.fragment_main, container, false)
         return binding.root
     }
@@ -75,6 +74,10 @@ class MainFragment : Fragment() {
 
         binding.changeEmailButton.setOnClickListener {
             changeEmailFlow()
+        }
+
+        binding.changeNameButton.setOnClickListener {
+            changeNameFlow()
         }
     }
 
@@ -121,38 +124,9 @@ class MainFragment : Fragment() {
         viewModel.authenticationState.observe(viewLifecycleOwner, Observer { authenticationState ->
             when (authenticationState) {
                 LoginViewModel.AuthenticationState.AUTHENTICATED -> {
-                    binding.authButton.text = getString(R.string.logout_button_text)
-                    binding.authButton.setOnClickListener {
-                        // TODO implement logging out user in next step
-                        AuthUI.getInstance().signOut(requireContext())
-                    }
-
-                    // TODO 2. If the user is logged in,
-                    // you can customize the welcome message they see by
-                    // utilizing the getFactWithPersonalization() function provided
-                    binding.welcomeText.text = getContentForAuth()
-                    val user = FirebaseAuth.getInstance().currentUser
-                    var url = user?.photoUrl?.toString()
-                        ?.replace("s96-c", "s400-c")
-                    if (url == null) {
-                        url = DEFAULT_AVATAR_LINK
-                    }
-                    Picasso.with(this.requireContext()).load(url).into(binding.imageView)
-                    changeVisibility(true)
-                    if (user?.email != null) {
-                        binding.emailInput.setText(user.email)
-                    }
-
-                    // FirebaseAuth.getInstance().currentUser?.updateEmail("ds-drozdov@yandex.ru")
-
-//                    val updates =
-//                        UserProfileChangeRequest.Builder().setDisplayName("Oaoaoaa").build()
-//                    FirebaseAuth.getInstance().currentUser?.updateProfile(updates)
+                    onLogin()
                 }
                 else -> {
-                    // TODO 3. Lastly, if there is no logged-in user,
-                    // auth_button should display Login and
-                    //  launch the sign in screen when clicked.
                     onLogout()
                 }
             }
@@ -162,9 +136,8 @@ class MainFragment : Fragment() {
 
     private fun getContentForAuth(): String {
         val provider = FirebaseAuth.getInstance().getAccessToken(false).result?.signInProvider
-        val user = FirebaseAuth.getInstance().currentUser
-        var name = user?.displayName
-        if (name.isNullOrEmpty()) {
+        var name = viewModel.userName
+        if (name.isEmpty()) {
             name = "-"
         }
         return String.format(
@@ -227,16 +200,51 @@ class MainFragment : Fragment() {
         try {
             user.updateEmail(newEmail)
         } catch (e: FirebaseException) {
-            Toast.makeText(requireContext(), "Firebase exception ${e.message}", Toast.LENGTH_SHORT)
+            Toast.makeText(requireContext(), "Firebase exception ${e.message}", Toast.LENGTH_LONG)
                 .show()
             return
         } catch (e: Exception) {
-            Toast.makeText(requireContext(), "Unknown exception ${e.message}", Toast.LENGTH_SHORT)
+            Toast.makeText(requireContext(), "Unknown exception ${e.message}", Toast.LENGTH_LONG)
                 .show()
             return
         }
 
-        Toast.makeText(requireContext(), "Email updated $oldEmail → $newEmail", Toast.LENGTH_SHORT)
+        Toast.makeText(requireContext(), "Email updated $oldEmail → $newEmail", Toast.LENGTH_LONG)
+            .show()
+    }
+
+    private fun changeNameFlow() {
+        val user = FirebaseAuth.getInstance().currentUser
+        if (user == null) {
+            Log.e("changeNameFlow", "user was null")
+            return
+        }
+        var oldName = user.displayName
+        if (oldName.isNullOrEmpty()) {
+            oldName = "-"
+        }
+
+        val newName = binding.nameInput.text.toString()
+        if (newName.isEmpty()) {
+            return
+        }
+
+        try {
+            val updates = UserProfileChangeRequest.Builder().setDisplayName(newName).build()
+            user.updateProfile(updates)
+            viewModel.userName = newName
+            binding.welcomeText.text = getContentForAuth()
+        } catch (e: FirebaseException) {
+            Toast.makeText(requireContext(), "Firebase exception ${e.message}", Toast.LENGTH_LONG)
+                .show()
+            return
+        } catch (e: Exception) {
+            Toast.makeText(requireContext(), "Unknown exception ${e.message}", Toast.LENGTH_LONG)
+                .show()
+            return
+        }
+
+        Toast.makeText(requireContext(), "Name updated $oldName → $newName", Toast.LENGTH_LONG)
             .show()
     }
 
@@ -245,6 +253,29 @@ class MainFragment : Fragment() {
         binding.authButton.setOnClickListener { launchSignInFlow() }
         binding.welcomeText.text = PLEASE_LOGIN_TEXT
         changeVisibility(false)
+        viewModel.userName = ""
+    }
+
+    private fun onLogin() {
+        binding.authButton.text = getString(R.string.logout_button_text)
+        binding.authButton.setOnClickListener {
+            AuthUI.getInstance().signOut(requireContext())
+        }
+
+        val user = FirebaseAuth.getInstance().currentUser
+        viewModel.userName = user?.displayName ?: ""
+        binding.welcomeText.text = getContentForAuth()
+
+        var url = user?.photoUrl?.toString()?.replace("s96-c", "s400-c")
+        if (url.isNullOrEmpty()) {
+            url = DEFAULT_AVATAR_LINK
+        }
+        Picasso.with(requireContext()).load(url).into(binding.imageView)
+
+        changeVisibility(true)
+
+        binding.emailInput.setText(user?.email ?: "")
+        binding.nameInput.setText(user?.displayName ?: "")
     }
 
     private fun changeVisibility(visible: Boolean) {
@@ -254,5 +285,7 @@ class MainFragment : Fragment() {
         binding.deleteButton.visibility = visibility
         binding.emailInput.visibility = visibility
         binding.changeEmailButton.visibility = visibility
+        binding.nameInput.visibility = visibility
+        binding.changeNameButton.visibility = visibility
     }
 }

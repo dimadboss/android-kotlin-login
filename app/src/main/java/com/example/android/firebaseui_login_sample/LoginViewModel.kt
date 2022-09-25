@@ -40,5 +40,5 @@ class LoginViewModel : ViewModel() {
         }
     }
 
-    val user = FirebaseUserLiveData()
+    var userName = ""
 }
